@@ -226,7 +226,7 @@ function animate() {
         return;
     ctx.fillStyle = "black";
     ctx.fillRect(0, 0, canvas.width, canvas.height);
-    if (arrows.space && !inTimeout_flag) {
+    if (arrows.space && !inTimeout_flag && !game.over) {
         inTimeout_flag = true;
         projectiles.push(new Projectile({ x: player.position.x + player.width / 2, y: player.position.y - 10 }, { x: 0, y: -5 }));
         setTimeout(() => {

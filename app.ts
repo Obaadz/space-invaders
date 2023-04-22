@@ -337,7 +337,7 @@ function animate() {
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  if (arrows.space && !inTimeout_flag) {
+  if (arrows.space && !inTimeout_flag && !game.over) {
     inTimeout_flag = true;
 
     projectiles.push(
