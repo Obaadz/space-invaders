@@ -1,5 +1,9 @@
-const scoreNum = document.getElementById("score-number") as HTMLSpanElement;
-let score = 0;
+const scoreNumEl = document.getElementById("score-number") as HTMLSpanElement,
+  gameOverEl = document.getElementById("game-over"),
+  highestScoreEl = document.getElementById("highest-score") as HTMLSpanElement;
+let score = 0,
+  highestScore = Number(localStorage.getItem("highestScore")) || 0;
+
 const canvas = document.getElementById("canvas") as HTMLCanvasElement,
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
 
@@ -22,6 +26,26 @@ const game = {
 };
 
 window.addEventListener("keydown", (e) => {
+  if (e.key === "Enter" && game.active === false && player) {
+    player.position.x = canvas.width / 2 - player.width / 2;
+    player.position.y = canvas.height - player.height - 20;
+    player.opacity = 1;
+
+    score = 0;
+    scoreNumEl.textContent = "0";
+    gameOverEl.classList.remove("block");
+
+    projectiles.length = 0;
+    grids.length = 0;
+    invaderProjectiles.length = 0;
+    particles.length = 0;
+
+    createBgParticles();
+
+    game.over = false;
+    game.active = true;
+  }
+
   if (!game.over)
     switch (e.key) {
       case "d":
@@ -117,7 +141,7 @@ class Player {
 
   update() {
     if (!this.image || !this.position) return;
-
+    console.log(this.position);
     if (arrows.left && !arrows.right) {
       this.velocity.x = -4;
       this.rotation = -0.15;
@@ -388,8 +412,11 @@ function animate() {
         player.opacity = 0;
         game.over = true;
 
+        highestScoreEl.textContent = highestScore.toString();
+
         setTimeout(() => {
           game.active = false;
+          gameOverEl.classList.add("block");
         }, 2000);
       }
     }
@@ -435,7 +462,12 @@ function animate() {
 
             if (invaderFound && projectileFound) {
               score += 100;
-              scoreNum.textContent = score.toString();
+              scoreNumEl.textContent = score.toString();
+
+              if (score > highestScore) {
+                localStorage.setItem("highestScore", score.toString());
+                highestScore = score;
+              }
 
               createParticles(invader);
 
@@ -477,19 +509,22 @@ function createParticles(object: Invader | Player, color: string = "#BAA0DE") {
     );
 }
 
-for (let i = 0; i < 60; i++)
-  particles.push(
-    new Particle(
-      {
-        x: Math.random() * canvas.width,
-        y: Math.random() * canvas.height,
-      },
-      { x: 0, y: 0.25 },
-      Math.random() * 2 + 1,
-      "#FFFFFF9a"
-    )
-  );
+function createBgParticles() {
+  for (let i = 0; i < 60; i++)
+    particles.push(
+      new Particle(
+        {
+          x: Math.random() * canvas.width,
+          y: Math.random() * canvas.height,
+        },
+        { x: 0, y: 0.25 },
+        Math.random() * 2 + 1,
+        "#FFFFFF9a"
+      )
+    );
+}
 
+createBgParticles();
 animate();
 
 let intervalId = setInterval(() => {

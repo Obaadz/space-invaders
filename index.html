@@ -1,3 +1,7 @@
+<link
+  rel="stylesheet"
+  href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
+/>
 <style>
   body {
     margin: 0;
@@ -10,12 +14,34 @@
     margin-top: 0.5rem;
     user-select: none;
   }
+
+  #game-over {
+    display: none;
+    position: fixed;
+    color: white;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -60%);
+    user-select: none;
+    text-align: center;
+  }
+
+  .block {
+    display: block !important;
+  }
 </style>
+
 <link rel="icon" href="img/invader.png" type="image/png" />
 <title>Space Invaders</title>
 
 <div id="score">
   <small> Score: <span id="score-number">0</span> </small>
+</div>
+<div id="game-over">
+  <h1 class="animate__animated animate__zoomIn">Press enter to restart the game</h1>
+  <h2 class="animate__animated animate__zoomIn">
+    Highest Score: <span id="highest-score">0</span>
+  </h2>
 </div>
 <canvas id="canvas"></canvas>
 <script src="app.js"></script>
