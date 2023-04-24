@@ -7,12 +7,19 @@
     margin: 0;
   }
 
-  #score {
+  #board {
     position: fixed;
-    color: white;
     margin-left: 0.5rem;
     margin-top: 0.5rem;
+    color: white;
     user-select: none;
+    display: flex;
+    gap: 1rem;
+  }
+
+  #score,
+  #strike {
+    min-width: 4.5rem;
   }
 
   #game-over {
@@ -24,6 +31,12 @@
     transform: translate(-50%, -60%);
     user-select: none;
     text-align: center;
+    width: 500px;
+  }
+
+  #game-over div {
+    display: flex;
+    justify-content: space-between;
   }
 
   .block {
@@ -48,15 +61,25 @@
 <link rel="icon" href="img/invader.png" type="image/png" />
 <title>Space Invaders</title>
 
-<div id="score">
-  <small> Score: <span id="score-number">0</span> </small>
+<div id="board">
+  <div id="score">
+    <small> Score: <span id="score-number">0</span> </small>
+  </div>
+  <div id="strike">
+    <small> Strike: <span id="strike-number">1x</span> </small>
+  </div>
 </div>
 <div id="hearts"></div>
 <div id="game-over">
   <h1 class="animate__animated animate__zoomIn">Press enter to restart the game</h1>
-  <h2 class="animate__animated animate__zoomIn">
-    Highest Score: <span id="highest-score">0</span>
-  </h2>
+  <div>
+    <h2 class="animate__animated animate__zoomIn">
+      Highest Score: <span id="highest-score">0</span>
+    </h2>
+    <h2 class="animate__animated animate__zoomIn">
+      Highest Strike: <span id="highest-strike">1x</span>
+    </h2>
+  </div>
 </div>
 <canvas id="canvas"></canvas>
 <script src="app.js"></script>

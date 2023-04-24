@@ -1,5 +1,5 @@
-const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), heartsEl = document.getElementById("hearts");
-let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0;
+const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), highestStrikeEl = document.getElementById("highest-strike"), heartsEl = document.getElementById("hearts"), strikeEl = document.getElementById("strike-number");
+let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0, highestStrike = Number(localStorage.getItem("highestStrike")) || 1, strike = 1;
 const canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -9,7 +9,7 @@ const arrows = {
     left: false,
     right: false,
     space: false,
-}, PROJECTILE_DURATION_IN_MS = 500, GRID_SPEED = 2.5, DEFAULT_HEALTH = 3, OPACITY_INTERVAL_TIME_IN_MS = 5;
+}, PROJECTILE_DURATION_IN_MS = 500, GRID_SPEED = 2.5, DEFAULT_HEALTH = 3, OPACITY_INTERVAL_TIME_IN_MS = 5, TOP_MARGIN_FOR_NEW_GRIDS = 30;
 const game = {
     over: false,
     active: true,
@@ -22,7 +22,9 @@ window.addEventListener("keydown", (e) => {
         player.position.y = canvas.height - player.height - 20;
         player.opacity = 1;
         score = 0;
+        strike = 1;
         scoreNumEl.textContent = "0";
+        strikeEl.textContent = "1x";
         gameOverEl.classList.remove("block");
         projectiles.length = 0;
         grids.length = 0;
@@ -191,6 +193,29 @@ class Particle {
         this.draw();
     }
 }
+class StrikeParticle {
+    constructor(position, velocity, strike) {
+        this.position = position;
+        this.velocity = velocity;
+        this.opacity = 1;
+        this.strike = strike;
+    }
+    draw() {
+        ctx.save();
+        ctx.globalAlpha = this.opacity;
+        ctx.font = ".75rem Arial";
+        ctx.fillStyle = "white";
+        ctx.fillText(this.strike.toString() + "x", this.position.x, this.position.y);
+        ctx.restore();
+    }
+    update() {
+        this.position.x += this.velocity.x;
+        this.position.y += this.velocity.y;
+        if (this.opacity > 0.01)
+            this.opacity -= 0.01;
+        this.draw();
+    }
+}
 class Invader {
     constructor(position) {
         this.velocity = { x: 0, y: 0 };
@@ -228,7 +253,7 @@ class Grid {
         this.width = COLUMNS * 30;
         for (let x = 0; x < COLUMNS; x++)
             for (let y = 0; y < ROWS; y++)
-                this.invaders.push(new Invader({ x: x * 30, y: y * 30 }));
+                this.invaders.push(new Invader({ x: x * 30, y: TOP_MARGIN_FOR_NEW_GRIDS + y * 30 }));
     }
     update() {
         this.position.x += this.velocity.x;
@@ -240,7 +265,7 @@ class Grid {
         }
     }
 }
-const player = new Player(), projectiles = [], grids = [new Grid()], invaderProjectiles = [], particles = [];
+const player = new Player(), projectiles = [], grids = [new Grid()], invaderProjectiles = [], particles = [], strikeParticles = [];
 let inTimeout_flag = false;
 function animate() {
     requestAnimationFrame(animate);
@@ -265,9 +290,18 @@ function animate() {
         else
             particle.update();
     });
+    strikeParticles.forEach((strikeParticle, indexOfStrikeParticle) => {
+        if (strikeParticle.opacity <= 0)
+            setTimeout(() => strikeParticles.splice(indexOfStrikeParticle, 1), 0);
+        else
+            strikeParticle.update();
+    });
     projectiles.forEach((projectile, i) => {
-        if (projectile.position.y + projectile.radius <= 0)
+        if (projectile.position.y + projectile.radius <= 0) {
             setTimeout(() => projectiles.splice(i, 1), 0);
+            strike = 1;
+            strikeEl.textContent = "1x";
+        }
         else
             projectile.update();
     });
@@ -319,6 +353,7 @@ function animate() {
                     player.opacity = 0;
                     game.over = true;
                     highestScoreEl.textContent = highestScore.toString();
+                    highestStrikeEl.textContent = highestStrike + "x";
                     setTimeout(() => {
                         game.active = false;
                         gameOverEl.classList.add("block");
@@ -356,12 +391,19 @@ function animate() {
                         const invaderFound = grid.invaders.find((invader2) => invader2 === invader), projectileFound = projectiles.find((projectile2) => projectile2 === projectile);
                         if (invaderFound && projectileFound) {
                             score += 100;
+                            strike++;
                             scoreNumEl.textContent = score.toString();
+                            strikeEl.textContent = strike + "x";
                             if (score > highestScore) {
                                 localStorage.setItem("highestScore", score.toString());
                                 highestScore = score;
                             }
+                            if (strike > highestStrike) {
+                                localStorage.setItem("highestStrike", strike.toString());
+                                highestStrike = strike;
+                            }
                             createParticles(invader);
+                            createDeathStrike(invader);
                             grid.invaders.splice(indexOfInvader, 1);
                             projectiles.splice(indexOfProjectile, 1);
                             if (grid.invaders.length > 0) {
@@ -388,6 +430,9 @@ function createParticles(object, color = "#BAA0DE") {
             x: object.position.x + object.width / 2,
             y: object.position.y + object.height / 2,
         }, { x: (Math.random() - 0.5) * 2, y: (Math.random() - 0.5) * 2 }, Math.random() * 5 + 1, color, true));
+}
+function createDeathStrike(object) {
+    strikeParticles.push(new StrikeParticle({ x: object.position.x, y: object.position.y }, { x: Math.random() - 0.5, y: Math.random() * 2 }, strike));
 }
 function createBgParticles() {
     for (let i = 0; i < 60; i++)

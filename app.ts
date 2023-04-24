@@ -1,9 +1,13 @@
 const scoreNumEl = document.getElementById("score-number") as HTMLSpanElement,
   gameOverEl = document.getElementById("game-over"),
   highestScoreEl = document.getElementById("highest-score") as HTMLSpanElement,
-  heartsEl = document.getElementById("hearts");
+  highestStrikeEl = document.getElementById("highest-strike") as HTMLSpanElement,
+  heartsEl = document.getElementById("hearts"),
+  strikeEl = document.getElementById("strike-number") as HTMLSpanElement;
 let score = 0,
-  highestScore = Number(localStorage.getItem("highestScore")) || 0;
+  highestScore = Number(localStorage.getItem("highestScore")) || 0,
+  highestStrike = Number(localStorage.getItem("highestStrike")) || 1,
+  strike = 1;
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement,
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -21,7 +25,8 @@ const arrows = {
   PROJECTILE_DURATION_IN_MS = 500,
   GRID_SPEED = 2.5,
   DEFAULT_HEALTH = 3,
-  OPACITY_INTERVAL_TIME_IN_MS = 5;
+  OPACITY_INTERVAL_TIME_IN_MS = 5,
+  TOP_MARGIN_FOR_NEW_GRIDS = 30;
 
 const game = {
   over: false,
@@ -38,7 +43,9 @@ window.addEventListener("keydown", (e) => {
     player.opacity = 1;
 
     score = 0;
+    strike = 1;
     scoreNumEl.textContent = "0";
+    strikeEl.textContent = "1x";
     gameOverEl.classList.remove("block");
 
     projectiles.length = 0;
@@ -275,6 +282,48 @@ class Particle {
   }
 }
 
+class StrikeParticle {
+  position: { x: number; y: number };
+  velocity: { x: number; y: number };
+  radius: number;
+  color: string;
+  opacity: number;
+  strike: number;
+
+  constructor(
+    position: { x: number; y: number },
+    velocity: { x: number; y: number },
+    strike: number
+  ) {
+    this.position = position;
+    this.velocity = velocity;
+
+    this.opacity = 1;
+    this.strike = strike;
+  }
+
+  private draw() {
+    ctx.save();
+
+    ctx.globalAlpha = this.opacity;
+
+    ctx.font = ".75rem Arial";
+    ctx.fillStyle = "white";
+    ctx.fillText(this.strike.toString() + "x", this.position.x, this.position.y);
+
+    ctx.restore();
+  }
+
+  update() {
+    this.position.x += this.velocity.x;
+    this.position.y += this.velocity.y;
+
+    if (this.opacity > 0.01) this.opacity -= 0.01;
+
+    this.draw();
+  }
+}
+
 class Invader {
   position: { x: number; y: number };
   velocity: { x: number; y: number };
@@ -343,7 +392,9 @@ class Grid {
 
     for (let x = 0; x < COLUMNS; x++)
       for (let y = 0; y < ROWS; y++)
-        this.invaders.push(new Invader({ x: x * 30, y: y * 30 }));
+        this.invaders.push(
+          new Invader({ x: x * 30, y: TOP_MARGIN_FOR_NEW_GRIDS + y * 30 })
+        );
   }
 
   update() {
@@ -363,7 +414,8 @@ const player = new Player(),
   projectiles: Projectile[] = [],
   grids: Grid[] = [new Grid()],
   invaderProjectiles: InvaderProjectile[] = [],
-  particles: Particle[] = [];
+  particles: Particle[] = [],
+  strikeParticles: StrikeParticle[] = [];
 
 let inTimeout_flag = false;
 
@@ -400,10 +452,19 @@ function animate() {
     else particle.update();
   });
 
+  strikeParticles.forEach((strikeParticle, indexOfStrikeParticle) => {
+    if (strikeParticle.opacity <= 0)
+      setTimeout(() => strikeParticles.splice(indexOfStrikeParticle, 1), 0);
+    else strikeParticle.update();
+  });
+
   projectiles.forEach((projectile, i) => {
-    if (projectile.position.y + projectile.radius <= 0)
+    if (projectile.position.y + projectile.radius <= 0) {
       setTimeout(() => projectiles.splice(i, 1), 0);
-    else projectile.update();
+
+      strike = 1;
+      strikeEl.textContent = "1x";
+    } else projectile.update();
   });
 
   invaderProjectiles.forEach((projectile, i) => {
@@ -470,6 +531,7 @@ function animate() {
           game.over = true;
 
           highestScoreEl.textContent = highestScore.toString();
+          highestStrikeEl.textContent = highestStrike + "x";
 
           setTimeout(() => {
             game.active = false;
@@ -520,14 +582,22 @@ function animate() {
 
             if (invaderFound && projectileFound) {
               score += 100;
+              strike++;
               scoreNumEl.textContent = score.toString();
+              strikeEl.textContent = strike + "x";
 
               if (score > highestScore) {
                 localStorage.setItem("highestScore", score.toString());
                 highestScore = score;
               }
 
+              if (strike > highestStrike) {
+                localStorage.setItem("highestStrike", strike.toString());
+                highestStrike = strike;
+              }
+
               createParticles(invader);
+              createDeathStrike(invader);
 
               grid.invaders.splice(indexOfInvader, 1);
               projectiles.splice(indexOfProjectile, 1);
@@ -565,6 +635,16 @@ function createParticles(object: Invader | Player, color: string = "#BAA0DE") {
         true
       )
     );
+}
+
+function createDeathStrike(object: Invader) {
+  strikeParticles.push(
+    new StrikeParticle(
+      { x: object.position.x, y: object.position.y },
+      { x: Math.random() - 0.5, y: Math.random() * 2 },
+      strike
+    )
+  );
 }
 
 function createBgParticles() {
