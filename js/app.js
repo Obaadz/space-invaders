@@ -1,3 +1,8 @@
+import Player from "./classes/Player.js";
+import Projectile from "./classes/Projectile.js";
+import Grid from "./classes/Grid.js";
+import Particle from "./classes/Particle.js";
+import StrikeParticle from "./classes/StrikeParticle.js";
 const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), highestStrikeEl = document.getElementById("highest-strike"), heartsEl = document.getElementById("hearts"), strikeEl = document.getElementById("strike-number");
 let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0, highestStrike = Number(localStorage.getItem("highestStrike")) || 1, strike = 1;
 const canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
@@ -82,189 +87,6 @@ window.addEventListener("keyup", (e) => {
             break;
     }
 });
-class Player {
-    constructor() {
-        this.velocity = { x: 0, y: 0 };
-        const image = new Image();
-        image.src = "./img/spaceship.png";
-        this.image = image;
-        this.image.onload = () => {
-            const SCALE = 0.25;
-            this.width = this.image.width * SCALE;
-            this.height = this.image.height * SCALE;
-            this.position = {
-                x: canvas.width / 2 - this.width / 2,
-                y: canvas.height - this.height - 20,
-            };
-        };
-        this.rotation = 0;
-        this.opacity = 1;
-    }
-    draw() {
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.translate(this.position.x + this.width / 2, this.position.y + this.height / 2);
-        ctx.rotate(this.rotation);
-        ctx.translate(-this.position.x - this.width / 2, -this.position.y - this.height / 2);
-        ctx.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
-        ctx.restore();
-    }
-    update() {
-        if (!this.image || !this.position)
-            return;
-        if (arrows.left && !arrows.right && this.position.x > 0) {
-            this.velocity.x = -4;
-            this.rotation = -0.15;
-        }
-        else if (arrows.right &&
-            !arrows.left &&
-            this.position.x < canvas.width - this.width) {
-            this.velocity.x = 4;
-            this.rotation = 0.15;
-        }
-        else {
-            this.velocity.x = 0;
-            this.rotation = 0;
-        }
-        this.position.x += this.velocity.x;
-        this.draw();
-    }
-}
-class Projectile {
-    constructor(position, velocity) {
-        this.position = position;
-        this.velocity = velocity;
-        this.radius = 4;
-    }
-    draw() {
-        ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = "red";
-        ctx.fill();
-        ctx.closePath();
-    }
-    update() {
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        this.draw();
-    }
-}
-class InvaderProjectile {
-    constructor(position, velocity) {
-        this.position = position;
-        this.velocity = velocity;
-        this.width = 3;
-        this.height = 10;
-    }
-    draw() {
-        ctx.fillStyle = "white";
-        ctx.fillRect(this.position.x, this.position.y, this.width, this.height);
-    }
-    update() {
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        this.draw();
-    }
-}
-class Particle {
-    constructor(position, velocity, radius, color, fade = false) {
-        this.position = position;
-        this.velocity = velocity;
-        this.radius = radius;
-        this.color = color;
-        this.opacity = 1;
-        this.fade = fade;
-    }
-    draw() {
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.beginPath();
-        ctx.arc(this.position.x, this.position.y, this.radius, 0, Math.PI * 2);
-        ctx.fillStyle = this.color;
-        ctx.fill();
-        ctx.closePath();
-        ctx.restore();
-    }
-    update() {
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        if (this.opacity > 0.01 && this.fade)
-            this.opacity -= 0.01;
-        this.draw();
-    }
-}
-class StrikeParticle {
-    constructor(position, velocity, strike) {
-        this.position = position;
-        this.velocity = velocity;
-        this.opacity = 1;
-        this.strike = strike;
-    }
-    draw() {
-        ctx.save();
-        ctx.globalAlpha = this.opacity;
-        ctx.font = ".75rem Arial";
-        ctx.fillStyle = "white";
-        ctx.fillText(this.strike.toString() + "x", this.position.x, this.position.y);
-        ctx.restore();
-    }
-    update() {
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        if (this.opacity > 0.01)
-            this.opacity -= 0.01;
-        this.draw();
-    }
-}
-class Invader {
-    constructor(position) {
-        this.velocity = { x: 0, y: 0 };
-        const image = new Image();
-        image.src = "./img/invader.png";
-        this.image = image;
-        this.image.onload = () => {
-            const SCALE = 1;
-            this.width = this.image.width * SCALE;
-            this.height = this.image.height * SCALE;
-            this.position = { x: position.x, y: position.y };
-        };
-    }
-    draw() {
-        ctx.drawImage(this.image, this.position.x, this.position.y, this.width, this.height);
-    }
-    update(velocity) {
-        if (!this.image || !this.position)
-            return;
-        this.position.x += velocity.x;
-        this.position.y += velocity.y;
-        this.draw();
-    }
-    shoot(InvaderProjectiles) {
-        if (this.position)
-            InvaderProjectiles.push(new InvaderProjectile({ x: this.position.x + this.width / 2, y: this.position.y }, { x: 0, y: 4 }));
-    }
-}
-class Grid {
-    constructor() {
-        this.position = { x: 0, y: 0 };
-        this.velocity = { x: GRID_SPEED, y: 0 };
-        this.invaders = [];
-        const COLUMNS = Math.floor(Math.random() * 7) + 3, ROWS = Math.floor(Math.random() * 5) + 1;
-        this.width = COLUMNS * 30;
-        for (let x = 0; x < COLUMNS; x++)
-            for (let y = 0; y < ROWS; y++)
-                this.invaders.push(new Invader({ x: x * 30, y: TOP_MARGIN_FOR_NEW_GRIDS + y * 30 }));
-    }
-    update() {
-        this.position.x += this.velocity.x;
-        this.position.y += this.velocity.y;
-        this.velocity.y = 0;
-        if (this.position.x + this.width >= canvas.width || !this.position.x) {
-            this.velocity.x = -this.velocity.x;
-            this.velocity.y = 30;
-        }
-    }
-}
 const player = new Player(), projectiles = [], grids = [new Grid()], invaderProjectiles = [], particles = [], strikeParticles = [];
 let inTimeout_flag = false;
 function animate() {
@@ -456,3 +278,4 @@ let intervalId = setInterval(() => {
     if (!game.over)
         grids.push(new Grid());
 }, 35000);
+export { canvas, ctx, arrows, GRID_SPEED, TOP_MARGIN_FOR_NEW_GRIDS };
