@@ -1,4 +1,4 @@
-const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score");
+const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), heartsEl = document.getElementById("hearts");
 let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0;
 const canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
@@ -9,11 +9,13 @@ const arrows = {
     left: false,
     right: false,
     space: false,
-}, PROJECTILE_DURATION_IN_MS = 500, GRID_SPEED = 2.5;
+}, PROJECTILE_DURATION_IN_MS = 500, GRID_SPEED = 2.5, DEFAULT_HEALTH = 3, OPACITY_INTERVAL_TIME_IN_MS = 5;
 const game = {
     over: false,
     active: true,
+    health: 3,
 };
+let interval;
 window.addEventListener("keydown", (e) => {
     if (e.key === "Enter" && game.active === false && player) {
         player.position.x = canvas.width / 2 - player.width / 2;
@@ -29,6 +31,8 @@ window.addEventListener("keydown", (e) => {
         createBgParticles();
         game.over = false;
         game.active = true;
+        game.health = DEFAULT_HEALTH;
+        createHearts(DEFAULT_HEALTH);
     }
     if (!game.over)
         switch (e.key) {
@@ -106,7 +110,6 @@ class Player {
     update() {
         if (!this.image || !this.position)
             return;
-        console.log(this.position);
         if (arrows.left && !arrows.right) {
             this.velocity.x = -4;
             this.rotation = -0.15;
@@ -210,7 +213,8 @@ class Invader {
         this.draw();
     }
     shoot(InvaderProjectiles) {
-        InvaderProjectiles.push(new InvaderProjectile({ x: this.position.x + this.width / 2, y: this.position.y }, { x: 0, y: 4 }));
+        if (this.position)
+            InvaderProjectiles.push(new InvaderProjectile({ x: this.position.x + this.width / 2, y: this.position.y }, { x: 0, y: 4 }));
     }
 }
 class Grid {
@@ -276,14 +280,48 @@ function animate() {
                 projectile.position.y + projectile.height + projectile.width <=
                     player.position.y + player.height;
             if (collisionAtX && collisionAtY && !game.over) {
-                createParticles(player, "white");
-                player.opacity = 0;
-                game.over = true;
-                highestScoreEl.textContent = highestScore.toString();
-                setTimeout(() => {
-                    game.active = false;
-                    gameOverEl.classList.add("block");
-                }, 2000);
+                if (game.health >= 1 && !interval) {
+                    heartsEl.children[game.health - 1].classList.add("hide");
+                    game.health--;
+                    setTimeout(() => invaderProjectiles.splice(i, 1), 0);
+                }
+                if (!interval)
+                    createParticles(player, "white");
+                if (game.health >= 1 && !interval)
+                    interval = setInterval(() => {
+                        player.opacity -= 0.01;
+                        if (player.opacity <= 0.5) {
+                            clearInterval(interval);
+                            interval = setInterval(() => {
+                                player.opacity += 0.01;
+                                if (player.opacity >= 0.99) {
+                                    clearInterval(interval);
+                                    interval = setInterval(() => {
+                                        player.opacity -= 0.01;
+                                        if (player.opacity <= 0.5) {
+                                            clearInterval(interval);
+                                            interval = setInterval(() => {
+                                                player.opacity += 0.01;
+                                                if (player.opacity >= 0.99) {
+                                                    clearInterval(interval);
+                                                    interval = null;
+                                                }
+                                            }, OPACITY_INTERVAL_TIME_IN_MS);
+                                        }
+                                    }, OPACITY_INTERVAL_TIME_IN_MS);
+                                }
+                            }, OPACITY_INTERVAL_TIME_IN_MS);
+                        }
+                    }, OPACITY_INTERVAL_TIME_IN_MS);
+                if (game.health <= 0) {
+                    player.opacity = 0;
+                    game.over = true;
+                    highestScoreEl.textContent = highestScore.toString();
+                    setTimeout(() => {
+                        game.active = false;
+                        gameOverEl.classList.add("block");
+                    }, 2000);
+                }
             }
         }
     });
@@ -356,6 +394,15 @@ function createBgParticles() {
             y: Math.random() * canvas.height,
         }, { x: 0, y: 0.25 }, Math.random() * 2 + 1, "#FFFFFF9a"));
 }
+function createHearts(heartsNum) {
+    heartsEl.innerHTML = "";
+    for (let i = 0; i < heartsNum; i++) {
+        const img = document.createElement("img");
+        img.src = "./img/heart.png";
+        img.onload = () => heartsEl.appendChild(img);
+    }
+}
+createHearts(DEFAULT_HEALTH);
 createBgParticles();
 animate();
 let intervalId = setInterval(() => {

@@ -1,6 +1,7 @@
 const scoreNumEl = document.getElementById("score-number") as HTMLSpanElement,
   gameOverEl = document.getElementById("game-over"),
-  highestScoreEl = document.getElementById("highest-score") as HTMLSpanElement;
+  highestScoreEl = document.getElementById("highest-score") as HTMLSpanElement,
+  heartsEl = document.getElementById("hearts");
 let score = 0,
   highestScore = Number(localStorage.getItem("highestScore")) || 0;
 
@@ -18,12 +19,17 @@ const arrows = {
     space: false,
   },
   PROJECTILE_DURATION_IN_MS = 500,
-  GRID_SPEED = 2.5;
+  GRID_SPEED = 2.5,
+  DEFAULT_HEALTH = 3,
+  OPACITY_INTERVAL_TIME_IN_MS = 5;
 
 const game = {
   over: false,
   active: true,
+  health: 3,
 };
+
+let interval: any;
 
 window.addEventListener("keydown", (e) => {
   if (e.key === "Enter" && game.active === false && player) {
@@ -44,6 +50,9 @@ window.addEventListener("keydown", (e) => {
 
     game.over = false;
     game.active = true;
+    game.health = DEFAULT_HEALTH;
+
+    createHearts(DEFAULT_HEALTH);
   }
 
   if (!game.over)
@@ -141,7 +150,7 @@ class Player {
 
   update() {
     if (!this.image || !this.position) return;
-    console.log(this.position);
+
     if (arrows.left && !arrows.right) {
       this.velocity.x = -4;
       this.rotation = -0.15;
@@ -301,12 +310,13 @@ class Invader {
   }
 
   shoot(InvaderProjectiles: InvaderProjectile[]) {
-    InvaderProjectiles.push(
-      new InvaderProjectile(
-        { x: this.position.x + this.width / 2, y: this.position.y },
-        { x: 0, y: 4 }
-      )
-    );
+    if (this.position)
+      InvaderProjectiles.push(
+        new InvaderProjectile(
+          { x: this.position.x + this.width / 2, y: this.position.y },
+          { x: 0, y: 4 }
+        )
+      );
   }
 }
 
@@ -408,16 +418,60 @@ function animate() {
             player.position.y + player.height;
 
       if (collisionAtX && collisionAtY && !game.over) {
-        createParticles(player, "white");
-        player.opacity = 0;
-        game.over = true;
+        if (game.health >= 1 && !interval) {
+          heartsEl.children[game.health - 1].classList.add("hide");
 
-        highestScoreEl.textContent = highestScore.toString();
+          game.health--;
+          setTimeout(() => invaderProjectiles.splice(i, 1), 0);
+        }
 
-        setTimeout(() => {
-          game.active = false;
-          gameOverEl.classList.add("block");
-        }, 2000);
+        if (!interval) createParticles(player, "white");
+
+        if (game.health >= 1 && !interval)
+          interval = setInterval(() => {
+            player.opacity -= 0.01;
+
+            if (player.opacity <= 0.5) {
+              clearInterval(interval);
+              interval = setInterval(() => {
+                player.opacity += 0.01;
+
+                if (player.opacity >= 0.99) {
+                  clearInterval(interval);
+
+                  interval = setInterval(() => {
+                    player.opacity -= 0.01;
+
+                    if (player.opacity <= 0.5) {
+                      clearInterval(interval);
+
+                      interval = setInterval(() => {
+                        player.opacity += 0.01;
+
+                        if (player.opacity >= 0.99) {
+                          clearInterval(interval);
+
+                          interval = null;
+                        }
+                      }, OPACITY_INTERVAL_TIME_IN_MS);
+                    }
+                  }, OPACITY_INTERVAL_TIME_IN_MS);
+                }
+              }, OPACITY_INTERVAL_TIME_IN_MS);
+            }
+          }, OPACITY_INTERVAL_TIME_IN_MS);
+
+        if (game.health <= 0) {
+          player.opacity = 0;
+          game.over = true;
+
+          highestScoreEl.textContent = highestScore.toString();
+
+          setTimeout(() => {
+            game.active = false;
+            gameOverEl.classList.add("block");
+          }, 2000);
+        }
       }
     }
   });
@@ -524,6 +578,17 @@ function createBgParticles() {
     );
 }
 
+function createHearts(heartsNum: number) {
+  heartsEl.innerHTML = "";
+
+  for (let i = 0; i < heartsNum; i++) {
+    const img = document.createElement("img");
+    img.src = "./img/heart.png";
+    img.onload = () => heartsEl.appendChild(img);
+  }
+}
+
+createHearts(DEFAULT_HEALTH);
 createBgParticles();
 animate();
 

@@ -29,6 +29,20 @@
   .block {
     display: block !important;
   }
+
+  #hearts {
+    display: flex;
+    align-items: center;
+    position: fixed;
+    right: 0.25rem;
+    margin-top: 0.5rem;
+    gap: 0.25rem;
+    pointer-events: none;
+  }
+
+  .hide {
+    opacity: 0;
+  }
 </style>
 
 <link rel="icon" href="img/invader.png" type="image/png" />
@@ -37,6 +51,7 @@
 <div id="score">
   <small> Score: <span id="score-number">0</span> </small>
 </div>
+<div id="hearts"></div>
 <div id="game-over">
   <h1 class="animate__animated animate__zoomIn">Press enter to restart the game</h1>
   <h2 class="animate__animated animate__zoomIn">
