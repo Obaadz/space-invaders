@@ -151,10 +151,14 @@ class Player {
   update() {
     if (!this.image || !this.position) return;
 
-    if (arrows.left && !arrows.right) {
+    if (arrows.left && !arrows.right && this.position.x > 0) {
       this.velocity.x = -4;
       this.rotation = -0.15;
-    } else if (arrows.right && !arrows.left) {
+    } else if (
+      arrows.right &&
+      !arrows.left &&
+      this.position.x < canvas.width - this.width
+    ) {
       this.velocity.x = 4;
       this.rotation = 0.15;
     } else {
