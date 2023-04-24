@@ -33,7 +33,8 @@ const arrows = {
   PROJECTILE_DURATION_IN_MS = 500,
   GRID_SPEED = 2.5,
   DEFAULT_HEALTH = 3,
-  OPACITY_INTERVAL_TIME_IN_MS = 5,
+  OPACITY_INTERVAL_TIME_IN_MS = 2000,
+  OPACITY_INTERVAL_SWITCH_IN_MS = 5,
   TOP_MARGIN_FOR_NEW_GRIDS = 30;
 
 const game = {
@@ -200,39 +201,16 @@ function animate() {
 
         if (!interval) createParticles(player, "white");
 
-        if (game.health >= 1 && !interval)
-          interval = setInterval(() => {
-            player.opacity -= 0.01;
+        if (game.health >= 1 && !interval) {
+          interval = animatePlayerOpacity();
+          setTimeout(() => {
+            clearInterval(interval);
 
-            if (player.opacity <= 0.5) {
-              clearInterval(interval);
-              interval = setInterval(() => {
-                player.opacity += 0.01;
+            player.opacity = 1;
 
-                if (player.opacity >= 0.99) {
-                  clearInterval(interval);
-
-                  interval = setInterval(() => {
-                    player.opacity -= 0.01;
-
-                    if (player.opacity <= 0.5) {
-                      clearInterval(interval);
-
-                      interval = setInterval(() => {
-                        player.opacity += 0.01;
-
-                        if (player.opacity >= 0.99) {
-                          clearInterval(interval);
-
-                          interval = null;
-                        }
-                      }, OPACITY_INTERVAL_TIME_IN_MS);
-                    }
-                  }, OPACITY_INTERVAL_TIME_IN_MS);
-                }
-              }, OPACITY_INTERVAL_TIME_IN_MS);
-            }
+            interval = null;
           }, OPACITY_INTERVAL_TIME_IN_MS);
+        }
 
         if (game.health <= 0) {
           player.opacity = 0;
@@ -389,3 +367,18 @@ let intervalId = setInterval(() => {
 }, 35000);
 
 export { canvas, ctx, arrows, GRID_SPEED, TOP_MARGIN_FOR_NEW_GRIDS };
+
+const animatePlayerOpacity = () => {
+  let opacity = 0.9;
+  let direction = -1;
+
+  const intervalId = setInterval(() => {
+    opacity += direction * 0.01;
+
+    if (opacity < 0.5 || opacity >= 0.9) direction *= -1;
+
+    player.opacity = opacity;
+  }, OPACITY_INTERVAL_SWITCH_IN_MS);
+
+  return intervalId;
+};
