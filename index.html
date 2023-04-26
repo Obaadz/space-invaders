@@ -3,8 +3,16 @@
   href="https://cdnjs.cloudflare.com/ajax/libs/animate.css/4.1.1/animate.min.css"
 />
 <style>
+  @import url("https://fonts.googleapis.com/css2?family=Amiri:wght@400;700&display=swap");
+
   body {
     margin: 0;
+  }
+
+  a:visited,
+  a:link:active,
+  a:visited:active {
+    color: unset;
   }
 
   #board {
@@ -43,18 +51,97 @@
     display: block !important;
   }
 
-  #hearts {
+  #right {
     display: flex;
-    align-items: center;
     position: fixed;
     right: 0.25rem;
     margin-top: 0.5rem;
+    gap: 2rem;
+    align-items: center;
+  }
+
+  .shop-all {
+    position: relative;
+  }
+
+  #shop {
+    font-family: Amiri;
+    font-weight: bold;
+    font-size: 0.65rem;
+    padding: 0.4rem 1rem;
+    background-color: #baa0de;
+    color: white;
+    outline: none;
+    border: none;
+    cursor: pointer;
+    border-radius: 0.25rem;
+    transition: 0.3s background-color, 0.3s color;
+  }
+
+  #shop:hover {
+    background-color: #a381d1de;
+    color: #dadada;
+  }
+
+  #shop-menu {
+    position: absolute;
+    width: 200px;
+    min-height: 100px;
+    color: white;
+    background: #baa0de;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 0.25rem;
+    top: 2rem;
+    padding: 0.5rem 1rem;
+    user-select: none;
+  }
+
+  #shop-menu::before {
+    content: "";
+    position: absolute;
+    border: 1rem solid red;
+    border-color: transparent transparent #baa0de transparent;
+    top: -24%;
+    left: 50%;
+    transform: translateX(-50%);
+    border-radius: 2rem;
+  }
+
+  #shop-menu .item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  #shop-menu a {
+    text-decoration: none;
+    font-size: 0.75rem;
+    color: white;
+  }
+
+  #shop-menu .item a:not(.disable):hover {
+    color: #dad8d8;
+  }
+
+  #shop-menu .item a.disable {
+    cursor: not-allowed;
+  }
+
+  #hearts {
+    min-width: 7.5rem;
+    display: flex;
+    align-items: center;
     gap: 0.25rem;
     pointer-events: none;
   }
 
   .hide {
     opacity: 0;
+  }
+
+  .none {
+    display: none;
   }
 </style>
 
@@ -69,7 +156,21 @@
     <small> Strike: <span id="strike-number">1x</span> </small>
   </div>
 </div>
-<div id="hearts"></div>
+<div id="right">
+  <div class="shop-all">
+    <button id="shop">SHOP</button>
+    <div class="none animate__animated animate__zoomIn">
+      <div id="shop-menu">
+        <div class="item">
+          <a href="#plus_projectiles_reload_speed">+ reload speed</a>
+          <span id="projectile-reload-speed">0</span>
+          <div>-1000 Score</div>
+        </div>
+      </div>
+    </div>
+  </div>
+  <div id="hearts"></div>
+</div>
 <div id="game-over">
   <h1 class="animate__animated animate__zoomIn">Press enter to restart the game</h1>
   <div>

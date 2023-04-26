@@ -3,8 +3,8 @@ import Projectile from "./classes/Projectile.js";
 import Grid from "./classes/Grid.js";
 import Particle from "./classes/Particle.js";
 import StrikeParticle from "./classes/StrikeParticle.js";
-const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), highestStrikeEl = document.getElementById("highest-strike"), heartsEl = document.getElementById("hearts"), strikeEl = document.getElementById("strike-number");
-let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0, highestStrike = Number(localStorage.getItem("highestStrike")) || 1, strike = 1;
+const scoreNumEl = document.getElementById("score-number"), gameOverEl = document.getElementById("game-over"), highestScoreEl = document.getElementById("highest-score"), highestStrikeEl = document.getElementById("highest-strike"), heartsEl = document.getElementById("hearts"), strikeEl = document.getElementById("strike-number"), shopEl = document.getElementById("shop"), shopMenuEl = document.getElementById("shop-menu"), projectileReloadSpeedEl = document.getElementById("projectile-reload-speed"), scoreDiv = document.getElementById("score"), shopAnchors = document.querySelectorAll("item a");
+let score = 0, highestScore = Number(localStorage.getItem("highestScore")) || 0, highestStrike = Number(localStorage.getItem("highestStrike")) || 1, strike = 1, projectileReloadSpeed = 0;
 const canvas = document.getElementById("canvas"), ctx = canvas.getContext("2d");
 canvas.width = window.innerWidth;
 canvas.height = window.innerHeight;
@@ -14,11 +14,11 @@ const arrows = {
     left: false,
     right: false,
     space: false,
-}, PROJECTILE_DURATION_IN_MS = 500, GRID_SPEED = 2.5, DEFAULT_HEALTH = 3, OPACITY_INTERVAL_TIME_IN_MS = 2000, OPACITY_INTERVAL_SWITCH_IN_MS = 5, TOP_MARGIN_FOR_NEW_GRIDS = 30;
+}, PROJECTILE_DURATION_IN_MS = 500, MAX_PROJECTILE_RELOAD_SPEED = 7, GRID_SPEED = 2.5, DEFAULT_HEALTH = 3, OPACITY_INTERVAL_TIME_IN_MS = 2000, OPACITY_INTERVAL_SWITCH_IN_MS = 5, TOP_MARGIN_FOR_NEW_GRIDS = 30;
 const game = {
     over: false,
     active: true,
-    health: 3,
+    health: DEFAULT_HEALTH,
 };
 let interval;
 window.addEventListener("keydown", (e) => {
@@ -28,9 +28,13 @@ window.addEventListener("keydown", (e) => {
         player.opacity = 1;
         score = 0;
         strike = 1;
+        projectileReloadSpeed = 0;
         scoreNumEl.textContent = "0";
+        projectileReloadSpeedEl.textContent = "0";
         strikeEl.textContent = "1x";
         gameOverEl.classList.remove("block");
+        shopEl.classList.remove("none");
+        shopAnchors.forEach((anchor) => anchor.classList.remove("disable"));
         projectiles.length = 0;
         grids.length = 0;
         invaderProjectiles.length = 0;
@@ -100,7 +104,7 @@ function animate() {
         projectiles.push(new Projectile({ x: player.position.x + player.width / 2, y: player.position.y - 10 }, { x: 0, y: -5 }));
         setTimeout(() => {
             inTimeout_flag = false;
-        }, PROJECTILE_DURATION_IN_MS);
+        }, PROJECTILE_DURATION_IN_MS - projectileReloadSpeed * 50);
     }
     particles.forEach((particle, indexOfParticle) => {
         if (particle.position.y - particle.radius >= canvas.height) {
@@ -158,6 +162,7 @@ function animate() {
                     game.over = true;
                     highestScoreEl.textContent = highestScore.toString();
                     highestStrikeEl.textContent = highestStrike + "x";
+                    shopEl.classList.add("none");
                     setTimeout(() => {
                         game.active = false;
                         gameOverEl.classList.add("block");
@@ -272,3 +277,38 @@ const animatePlayerOpacity = () => {
     }, OPACITY_INTERVAL_SWITCH_IN_MS);
     return intervalId;
 };
+shopEl.addEventListener("click", () => {
+    game.active = !game.active;
+    shopMenuEl.parentElement.classList.toggle("block");
+});
+shopMenuEl.addEventListener("click", (e) => {
+    const targetEl = e.target;
+    if (!targetEl.href)
+        return;
+    if (targetEl.href.includes("#plus_projectiles_reload_speed") &&
+        projectileReloadSpeed < MAX_PROJECTILE_RELOAD_SPEED) {
+        try {
+            console.log(score);
+            checkScoreIsNotLessThen(1000);
+            score -= 1000;
+            scoreNumEl.textContent = score.toString();
+            projectileReloadSpeed++;
+            projectileReloadSpeedEl.textContent = projectileReloadSpeed.toString();
+            if (projectileReloadSpeed >= MAX_PROJECTILE_RELOAD_SPEED)
+                targetEl.classList.add("disable");
+        }
+        catch (err) {
+            shakeScoreEl();
+        }
+    }
+});
+function checkScoreIsNotLessThen(num) {
+    if (score < num)
+        throw new Error();
+    return true;
+}
+function shakeScoreEl() {
+    if (scoreDiv.classList.contains("animate__animated"))
+        scoreDiv.classList.remove("animate__animated", "animate__headShake");
+    setTimeout(() => scoreDiv.classList.add("animate__animated", "animate__headShake"), 0);
+}

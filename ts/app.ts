@@ -11,11 +11,19 @@ const scoreNumEl = document.getElementById("score-number") as HTMLSpanElement,
   highestScoreEl = document.getElementById("highest-score") as HTMLSpanElement,
   highestStrikeEl = document.getElementById("highest-strike") as HTMLSpanElement,
   heartsEl = document.getElementById("hearts"),
-  strikeEl = document.getElementById("strike-number") as HTMLSpanElement;
+  strikeEl = document.getElementById("strike-number") as HTMLSpanElement,
+  shopEl = document.getElementById("shop"),
+  shopMenuEl = document.getElementById("shop-menu"),
+  projectileReloadSpeedEl = document.getElementById(
+    "projectile-reload-speed"
+  ) as HTMLSpanElement,
+  scoreDiv = document.getElementById("score"),
+  shopAnchors = document.querySelectorAll("item a");
 let score = 0,
   highestScore = Number(localStorage.getItem("highestScore")) || 0,
   highestStrike = Number(localStorage.getItem("highestStrike")) || 1,
-  strike = 1;
+  strike = 1,
+  projectileReloadSpeed = 0;
 
 const canvas = document.getElementById("canvas") as HTMLCanvasElement,
   ctx = canvas.getContext("2d") as CanvasRenderingContext2D;
@@ -31,6 +39,7 @@ const arrows = {
     space: false,
   },
   PROJECTILE_DURATION_IN_MS = 500,
+  MAX_PROJECTILE_RELOAD_SPEED = 7,
   GRID_SPEED = 2.5,
   DEFAULT_HEALTH = 3,
   OPACITY_INTERVAL_TIME_IN_MS = 2000,
@@ -40,7 +49,7 @@ const arrows = {
 const game = {
   over: false,
   active: true,
-  health: 3,
+  health: DEFAULT_HEALTH,
 };
 
 let interval: any;
@@ -53,9 +62,14 @@ window.addEventListener("keydown", (e) => {
 
     score = 0;
     strike = 1;
+    projectileReloadSpeed = 0;
     scoreNumEl.textContent = "0";
+    projectileReloadSpeedEl.textContent = "0";
     strikeEl.textContent = "1x";
     gameOverEl.classList.remove("block");
+    shopEl.classList.remove("none");
+
+    shopAnchors.forEach((anchor) => anchor.classList.remove("disable"));
 
     projectiles.length = 0;
     grids.length = 0;
@@ -148,7 +162,7 @@ function animate() {
 
     setTimeout(() => {
       inTimeout_flag = false;
-    }, PROJECTILE_DURATION_IN_MS);
+    }, PROJECTILE_DURATION_IN_MS - projectileReloadSpeed * 50);
   }
 
   particles.forEach((particle, indexOfParticle) => {
@@ -215,9 +229,10 @@ function animate() {
         if (game.health <= 0) {
           player.opacity = 0;
           game.over = true;
-
           highestScoreEl.textContent = highestScore.toString();
           highestStrikeEl.textContent = highestStrike + "x";
+
+          shopEl.classList.add("none");
 
           setTimeout(() => {
             game.active = false;
@@ -382,3 +397,46 @@ const animatePlayerOpacity = () => {
 
   return intervalId;
 };
+
+shopEl.addEventListener("click", () => {
+  game.active = !game.active;
+  shopMenuEl.parentElement.classList.toggle("block");
+});
+
+shopMenuEl.addEventListener("click", (e) => {
+  const targetEl = e.target as HTMLAnchorElement;
+
+  if (!targetEl.href) return;
+
+  if (
+    targetEl.href.includes("#plus_projectiles_reload_speed") &&
+    projectileReloadSpeed < MAX_PROJECTILE_RELOAD_SPEED
+  ) {
+    try {
+      console.log(score);
+      checkScoreIsNotLessThen(1000);
+      score -= 1000;
+      scoreNumEl.textContent = score.toString();
+      projectileReloadSpeed++;
+      projectileReloadSpeedEl.textContent = projectileReloadSpeed.toString();
+
+      if (projectileReloadSpeed >= MAX_PROJECTILE_RELOAD_SPEED)
+        targetEl.classList.add("disable");
+    } catch (err) {
+      shakeScoreEl();
+    }
+  }
+});
+
+function checkScoreIsNotLessThen(num: number) {
+  if (score < num) throw new Error();
+
+  return true;
+}
+
+function shakeScoreEl() {
+  if (scoreDiv.classList.contains("animate__animated"))
+    scoreDiv.classList.remove("animate__animated", "animate__headShake");
+
+  setTimeout(() => scoreDiv.classList.add("animate__animated", "animate__headShake"), 0);
+}
