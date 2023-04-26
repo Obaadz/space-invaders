@@ -279,7 +279,8 @@ const animatePlayerOpacity = () => {
 };
 shopEl.addEventListener("click", () => {
     game.active = !game.active;
-    shopMenuEl.parentElement.classList.toggle("block");
+    shopMenuEl.parentElement.classList.remove("visibility-hidden");
+    shopMenuEl.parentElement.classList.toggle("animate__zoomOut");
 });
 shopMenuEl.addEventListener("click", (e) => {
     const targetEl = e.target;
