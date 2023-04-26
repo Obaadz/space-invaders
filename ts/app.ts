@@ -402,6 +402,7 @@ shopEl.addEventListener("click", () => {
   game.active = !game.active;
   shopMenuEl.parentElement.classList.remove("visibility-hidden");
   shopMenuEl.parentElement.classList.toggle("animate__zoomOut");
+  canvas.focus();
 });
 
 shopMenuEl.addEventListener("click", (e) => {
